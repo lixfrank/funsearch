@@ -36,13 +36,13 @@ def get_model_provider(model_name):
 
 class LLMModel:
     def __init__(
-        self, 
-        model_name="codestral-latest", 
-        top_p=0.9, 
-        temperature=0.7, 
-        keynum=0, 
-        timeout=10, 
-        retries=10, 
+        self,
+        model_name="codestral-latest",
+        top_p=0.9,
+        temperature=0.7,
+        keynum=0,
+        timeout=10,
+        retries=10,
         id=None,
         #config=None  # Add config parameter
         log_path=None,
@@ -51,7 +51,7 @@ class LLMModel:
         api_call_retries=10
     ):
         self.id = str(shortuuid.uuid()) if id is None else str(id)
-        
+
         if '%' in model_name:
             s = model_name.split('%')
             assert len(s)==2
@@ -70,7 +70,10 @@ class LLMModel:
         elif self.provider == "anthropic":
             self.client = anthropic.AsyncAnthropic(api_key=self.key)
         elif self.provider == "openai":
-            self.client = openai.AsyncOpenAI(api_key=self.key)
+            if "deepseek" in model_name.lower():
+                self.client = openai.AsyncOpenAI(api_key=self.key,base_url="https://api.deepseek.com/v1/")
+            else:
+                self.client = openai.AsyncOpenAI(api_key=self.key)
         elif self.provider == "google":
             genai.configure(api_key=self.key)
             self.client = genai.GenerativeModel(model_name,system_instruction=self.system_prompt)
@@ -113,10 +116,10 @@ class LLMModel:
 
             return {
                 "id": data["id"],
-                "model": data["model"], 
+                "model": data["model"],
                 "tokens_prompt": data["tokens_prompt"],
                 "tokens_completion": data["tokens_completion"],
-                "native_tokens_prompt": data["native_tokens_prompt"], 
+                "native_tokens_prompt": data["native_tokens_prompt"],
                 "native_tokens_completion": data["native_tokens_completion"],
                 "total_cost": data["total_cost"],
                 "generation_time": data["generation_time"]
@@ -222,16 +225,16 @@ class LLMModel:
                         prompt=prompt_text,
                         response=chat_response
                     )
-                    
+
                     # Fetch detailed stats asynchronously
                     detailed_stats = False#await self.get_openrouter_stats(response.id)
                     if self.log_detailed_stats and detailed_stats:# and 'data' in detailed_stats:
                         data = detailed_stats['data']
                         usage_stats.total_cost = data.get('total_cost')
                         usage_stats.generation_time = data.get('generation_time')
-                    
+
                     #await self.usage_logger.log_usage(usage_stats)
-        
+
         elif self.provider == "google":
             response = await self.client.generate_content_async(
                 prompt_text,#system prompt is defined in the client
