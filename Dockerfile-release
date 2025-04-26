@@ -3,7 +3,7 @@ FROM docker.io/python:3.11.6
 WORKDIR /workspace
 
 # Copy build and dependency files first for better layer caching
-COPY pyproject.toml README.md install.sh ./
+COPY pyproject.toml README.md ./
 COPY requirements*.txt ./
 
 # Install dependencies using either uv or pip based on build arg
@@ -25,15 +25,15 @@ RUN mkdir -p ./data && \
     cd ..
 
 # Copy application code
-# COPY examples ./examples
-# COPY funsearch ./funsearch
+COPY examples ./examples
+COPY funsearch ./funsearch
 
 # Install the application
-# RUN if [ "$USE_UV" = "true" ]; then \
-#         uv pip install --system --no-deps .; \
-#     else \
-#         pip install --no-deps .; \
-#     fi && \
-#     rm -r ./funsearch ./build
+RUN if [ "$USE_UV" = "true" ]; then \
+        uv pip install --system --no-deps .; \
+    else \
+        pip install --no-deps .; \
+    fi && \
+    rm -r ./funsearch ./build
 
 CMD ["bash"]
