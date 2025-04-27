@@ -44,7 +44,7 @@ class LLMModel:
         timeout=10,
         retries=10,
         id=None,
-        #config=None  # Add config parameter
+        # config=None  # Add config parameter
         log_path=None,
         system_prompt="Improve the incomplete last function in the list.",## See config.py for the default system prompt
         api_call_timeout=120,
@@ -71,7 +71,7 @@ class LLMModel:
             self.client = anthropic.AsyncAnthropic(api_key=self.key)
         elif self.provider == "openai":
             if "deepseek" in model_name.lower():
-                self.client = openai.AsyncOpenAI(api_key=self.key,base_url="https://api.deepseek.com/v1/")
+                self.client = openai.AsyncOpenAI(api_key=self.key, base_url="https://api.deepseek.com/v1/")
             else:
                 self.client = openai.AsyncOpenAI(api_key=self.key)
         elif self.provider == "google":
