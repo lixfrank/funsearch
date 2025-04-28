@@ -13,3 +13,6 @@ shortuuid
 aiohttp
 wandb
 mistralai 
+torch
+torchvision
+torchaudio
