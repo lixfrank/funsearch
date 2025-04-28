@@ -12,4 +12,5 @@ openai>=1.2
 shortuuid
 aiohttp
 wandb
-mistralai 
+mistralai
+torch
