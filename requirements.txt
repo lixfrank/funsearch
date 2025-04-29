@@ -12,12 +12,7 @@ openai>=1.2
 shortuuid
 aiohttp
 wandb
-<<<<<<< HEAD
-mistralai
-torch
-=======
 mistralai 
 torch
 torchvision
 torchaudio
->>>>>>> 972f50e64bbd9c06a949190c06148c6138f9400f
