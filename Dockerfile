@@ -30,6 +30,8 @@ RUN mkdir -p ./data && \
     mkdir -p scores graphs backups && \
     cd ..
 
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
 # Copy application code
 # COPY examples ./examples
 # COPY funsearch ./funsearch

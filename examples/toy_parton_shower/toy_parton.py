@@ -95,8 +95,7 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
     def simulate_splitting_all(splitting_function,
                                initial_particles,
                                num_sample,
-                               delta=0.05,
-                               device="cuda"):
+                               delta=0.05):
         """
         The main function
         Args:
@@ -129,10 +128,11 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
 
             return particles
 
+        device = initial_particles.device
         # Calculate maximum value of splitting function
         z_sample = torch.tensor([delta], dtype=torch.float32, device=device)
         max_p = splitting_function(z_sample).item()
-        
+
         final_particles = [simulate_splitting_one(splitting_function, p, num_sample, max_p) for p in initial_particles]
         return final_particles
 
@@ -144,16 +144,19 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
 
     def compute_distance(x1, x2):
         from scipy.stats import wasserstein_distance
-        x1 = flattening(x1).numpy()
-        x2 = flattening(x2).numpy()
+        x1 = flattening(x1).cpu().numpy()
+        x2 = flattening(x2).cpu().numpy()
         return wasserstein_distance(x1, x2)
 
+    device = "cpu"
     initial_particles = 2. + 8. * torch.rand(size=(num_input,))
+    initial_particles = initial_particles.to(device)
     real = simulate_splitting_all(g_splitting, initial_particles, num_sample)
     pred = simulate_splitting_all(splitting_function_evolve, initial_particles, num_sample)
 
     distances = torch.tensor([compute_distance(r, p) for r, p in zip(real, pred)])
-    reward = -torch.mean(distances).item()
+    reward = -torch.mean(distances)
+    reward = reward.item()
     return reward
 
 

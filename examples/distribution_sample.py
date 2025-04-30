@@ -78,8 +78,8 @@ def evaluate(num_samples: int = 1000) -> int:
         compute the distance defined by wasserstein-1
         """
         from scipy.stats import wasserstein_distance
-        x1 = flattening(x1).numpy()
-        x2 = flattening(x2).numpy()
+        x1 = flattening(x1).cpu().numpy()
+        x2 = flattening(x2).cpu().numpy()
         return wasserstein_distance(x1, x2)
 
     real = sample_z_batch(g_splitting, num_samples)
