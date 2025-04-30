@@ -153,7 +153,7 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
     pred = simulate_splitting_all(splitting_function_evolve, initial_particles, num_sample)
 
     distances = torch.tensor([compute_distance(r, p) for r, p in zip(real, pred)])
-    reward = -torch.mean(distances)
+    reward = -torch.mean(distances).item()
     return reward
 
 
