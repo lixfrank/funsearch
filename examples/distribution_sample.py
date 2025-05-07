@@ -23,15 +23,15 @@ from torch import Tensor
 @funsearch.run
 def evaluate(num_samples: int = 1000) -> int:
     """
-    Evaluates the distance of evolved distribution function and real distribution function (named g_splitting).
+    Evaluates the distance of evolved distribution function and real distribution function (named g_density).
     Returns a score based on average of wasserstein distance of results generated from these two distribution.
     """
 
     import torch
 
-    def g_splitting(z: torch.Tensor):
+    def g_density(z: torch.Tensor):
         """
-        Real splitting function
+        Real density function
         Args:
             z: a number between [delta, 1-delta], delta=0.05 by default.
         Returns:
@@ -45,11 +45,11 @@ def evaluate(num_samples: int = 1000) -> int:
                        batch_size=1024,
                        device="cuda"):
         """
-        Sample the fraction z for each particles by randomly sampling,based on the splitting function.
+        Sample the fraction z for each particles by randomly sampling,based on the density function.
         If particle <= 1.0, the fraction z=0
         Args:
         """
-        # Calculate maximum value of splitting function
+        # Calculate maximum value of density function
         z_sample = torch.tensor([delta], dtype=torch.float32, device=device)
         max_p = density_func(z_sample).item()
 
@@ -82,7 +82,7 @@ def evaluate(num_samples: int = 1000) -> int:
         x2 = flattening(x2).cpu().numpy()
         return wasserstein_distance(x1, x2)
 
-    real = sample_z_batch(g_splitting, num_samples)
+    real = sample_z_batch(g_density, num_samples)
     pred = sample_z_batch(density_evolve, num_samples)
 
     reward = -compute_distance(real, pred)

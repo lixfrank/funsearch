@@ -10,12 +10,12 @@ The code you generate will be appended to the user prompt and run as a python pr
 ### END SYSTEM PROMPT
 ### <<<< user prompt: will be added to the final prompt>>>>>
 """
-Find the splitting function for a toy model of particle splitting.
+Find the density function for a toy model of particle density.
 Toy model means it not the model used in practical generators of collider HEP, which includes particles with only one parameter energy.
-In splitting process, one particle with energy E will split to two particles with energy zE and (1-z)E, where z is randomly sampled from distribution P(z), called splitting funcion, and particle with energy < 1.0 will stop splitting.
-The function simulate_splitting_all is the main function of simulation, which needs arguments "splitting_function" for sampling energy.
-The goal is to find a splitting function that MINIMIZE the distance between simulating results by the splitting function and real splitting function. The distance is calucalted by wasserstein-1 distance.
-You should only use rational function as splitting function evolved, which is enough.
+In density process, one particle with energy E will split to two particles with energy zE and (1-z)E, where z is randomly sampled from distribution P(z), called density funcion, and particle with energy < 1.0 will stop density.
+The function simulate_density_all is the main function of simulation, which needs arguments "density_function" for sampling energy.
+The goal is to find a density function that MINIMIZE the distance between simulating results by the density function and real density function. The distance is calucalted by wasserstein-1 distance.
+You should only use rational function as density function evolved, which is enough.
 """
 
 
@@ -26,17 +26,17 @@ from torch import Tensor
 @funsearch.run
 def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
     """
-    Evaluates the distance of evolved splitting function and real splitting function.
-    Returns a score based on average of wasserstein distance of results generated from these two splitting function.
+    Evaluates the distance of evolved density function and real density function.
+    Returns a score based on average of wasserstein distance of results generated from these two density function.
     """
 
     import torch
 
-    def g_splitting(z: torch.Tensor):
+    def g_density(z: torch.Tensor):
         """
-        Real splitting function
+        Real density function
         Args:
-            z: fraction of energy in particle splitting
+            z: fraction of energy in particle density
         Returns:
             probability density of fraction z
         """
@@ -57,12 +57,12 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
         return result
 
     def sample_z_batch(particles: torch.Tensor,
-                       splitting_func,
+                       density_func,
                        max_p,
                        delta=0.05,
                        batch_size=1024):
         """
-        Sample the fraction z for each particles by randomly sampling,based on the splitting function.
+        Sample the fraction z for each particles by randomly sampling,based on the density function.
         If particle <= 1.0, the fraction z=0
         Args:
         """
@@ -81,7 +81,7 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
         while len(samples) < num_samples:
             x = torch.rand(batch_size, device=device) * (1 - 2*delta) + delta
             u = torch.rand(batch_size, device=device) * max_p
-            fx = splitting_func(x)
+            fx = density_func(x)
             accepted = u <= fx
             samples.append(x[accepted])
 
@@ -92,34 +92,34 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
 
         return z_values
 
-    def simulate_splitting_all(splitting_function,
+    def simulate_density_all(density_function,
                                initial_particles,
                                num_sample,
                                delta=0.05):
         """
         The main function
         Args:
-            splitting_function: a Callable function which is probability density of energy fraction z, will be modified by FunSearch.
+            density_function: a Callable function which is probability density of energy fraction z, will be modified by FunSearch.
             num_input: the number of different initial particles
             num_sample: the number of repeated sample for each initial particle.
             delta: the cut of fraction z, making the sample of z in [delta, 1-delta] to avoid singularities.
             device: the device used for computation
         Returns:
-            particles after splitting, a 2d torch tensor
+            particles after density, a 2d torch tensor
         """
-        def simulate_splitting_one(splitting_function, initial_particle, num_sample, max_p):
+        def simulate_density_one(density_function, initial_particle, num_sample, max_p):
             initial_particles = initial_particle.repeat(num_sample)
 
             particles = initial_particles.clone()
             while True:
-                # Find particles that need splitting
+                # Find particles that need density
                 mask = particles >= 1.0
                 if not mask.any():
                     break
 
                 particles = particles.flatten()
                 # Sample z values for all particles to split
-                z = sample_z_batch(particles, splitting_function, max_p, delta)
+                z = sample_z_batch(particles, density_function, max_p, delta)
 
                 # Calculate new particle energies
                 particles = torch.stack([(1-z)*particles, z*particles], dim=1).flatten()
@@ -129,11 +129,11 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
             return particles
 
         device = initial_particles.device
-        # Calculate maximum value of splitting function
+        # Calculate maximum value of density function
         z_sample = torch.tensor([delta], dtype=torch.float32, device=device)
-        max_p = splitting_function(z_sample).item()
+        max_p = density_function(z_sample).item()
 
-        final_particles = [simulate_splitting_one(splitting_function, p, num_sample, max_p) for p in initial_particles]
+        final_particles = [simulate_density_one(density_function, p, num_sample, max_p) for p in initial_particles]
         return final_particles
 
     def flattening(x):
@@ -151,8 +151,8 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
     device = "cpu"
     initial_particles = 2. + 8. * torch.rand(size=(num_input,))
     initial_particles = initial_particles.to(device)
-    real = simulate_splitting_all(g_splitting, initial_particles, num_sample)
-    pred = simulate_splitting_all(splitting_function_evolve, initial_particles, num_sample)
+    real = simulate_density_all(g_density, initial_particles, num_sample)
+    pred = simulate_density_all(density_function_evolve, initial_particles, num_sample)
 
     distances = torch.tensor([compute_distance(r, p) for r, p in zip(real, pred)])
     reward = -torch.mean(distances)
@@ -161,12 +161,12 @@ def evaluate(num_input: int = 10, num_sample: int = 1000) -> int:
 
 
 @funsearch.evolve  ####<<<< THIS TELLS FUNSEARCH WHAT TO EVOLVE>>>######
-def splitting_function_evolve(z: Tensor) -> Tensor:
+def density_function_evolve(z: Tensor) -> Tensor:
     """
-    The splitting function of a toy splitting model,
-    that describe probability density of energy fraction in the process of one particle splitting.
+    The density function of a toy density model,
+    that describe probability density of energy fraction in the process of one particle density.
     Args:
-        z:  energy fraction in particle splitting
+        z:  energy fraction in particle density
     Returns:
         probability density of fraction z
     """
